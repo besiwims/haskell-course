@@ -1,44 +1,39 @@
 Functor
 
-Here is the English translation of your text:
+Voici la traduction en français :  
 
 ---
 
-# Functor  
+# **Foncteur**  
+Bienvenue dans une nouvelle leçon du cours Haskell. Celle-ci est entièrement consacrée à la classe de types **Functor**.  
 
-Welcome to a new lesson of the Haskell course. This one is all about the **Functor** type class.  
+## **Les foncteurs sont 🌏 PARTOUT !! 🌎**  
+Dans cette leçon :  
+✅ Vous comprendrez le concept de **Foncteur**  
+✅ Vous apprendrez tout ce qu'il faut savoir pour les utiliser en pratique  
 
-### **Functors are 🌏 EVERYWHERE!! 🌎**  
+Les foncteurs existent en mathématiques, dans les langages de programmation, en linguistique, sous votre lit en attendant que vous dormiez… Les foncteurs sont partout ! Il est même possible que vous ayez déjà travaillé avec des foncteurs sans le savoir.  
 
-In this lesson:  
-- You'll understand the concept of **Functor**.  
-- You'll learn everything you need to know to use them in practice.  
+Après cette leçon, non seulement vous comprendrez le concept de foncteur en Haskell, mais nous irons encore plus loin afin que vous sachiez tout ce qu'il faut pour les utiliser concrètement.  
 
-We have functors in mathematics, programming languages, linguistics, and even under your bed waiting for you to go to sleep... **Functors are everywhere!!** You might have worked with functors without even knowing.  
+## **Comment allons-nous faire cela ?**  
 
-After this lesson, you will not only understand the concept of **Functor** in Haskell, but we'll also go the extra mile so you can **learn everything you need to know to actually use it in practice**.  
-
-And how are we going to do that? This is how:  
-
----
-
-## **Outline**  
-- Abstracting the `map` function  
-- The **Functor** type class  
-- Defining **Functor** instances  
-- Seemingly unintuitive **Functor** instances  
-- The `Either a` functor 🤔  
-- The `(,) a` functor 🤨  
-- The `(->) r` functor 🤯  
-- Defining `<$>` and **Lifting** 🏋️ a function  
-- **Functor nesting dolls** 🪆  
-- Extra functions and **Functor** as defined in `base`  
+### **Plan**  
+- **Abstraction de la fonction `map`**  
+- **La classe de types `Functor`**  
+- **Définition d'instances de `Functor`**  
+- **Instances de `Functor` contre-intuitives**  
+- **Le foncteur `Either a` 🤔**  
+- **Le foncteur `(,) a` 🤨**  
+- **Le foncteur `(->) r` 🤯**  
+- **Définition de `<$>` et élévation 🏋️ d'une fonction**  
+- **Les poupées russes du foncteur 🪆**  
+- **Fonctions supplémentaires et le foncteur défini dans `base`**  
 
 ---
 
-## **Abstracting the `map` function**  
-
-This chapter will be super easy since you already know about `map`. Let's implement a function that returns the lowercase version of a `String`:  
+## **Abstraction de la fonction `map`**  
+Ce chapitre sera très facile puisque vous connaissez déjà la fonction `map`. Implémentons une fonction qui transforme une chaîne de caractères en minuscules :  
 
 ```haskell
 import Data.Char (toLower)
@@ -47,11 +42,11 @@ lowerString :: [Char] -> [Char]
 lowerString []     = []
 lowerString (x:xs) = toLower x : lowerString xs
 
-lowerString "Hi, How's it Going?"
--- "hi, how's it going?"
-```
+lowerString "Salut, Comment Ça Va ?"
+-- "salut, comment ça va ?"
+```  
 
-Now, let's implement a function that adds one to a list of numbers:  
+Créons maintenant une fonction qui ajoute 1 à chaque élément d'une liste de nombres :  
 
 ```haskell
 addOne :: Num a => [a] -> [a]
@@ -60,9 +55,9 @@ addOne (x:xs) = (x + 1) : addOne xs
 
 addOne [1,1,2,3]
 -- [2,2,3,4]
-```
+```  
 
-And now, let's implement a function that transforms a list of boolean values into a list of characters representing bits:  
+Et une fonction qui transforme une liste de valeurs booléennes en une liste de bits représentés par des caractères :  
 
 ```haskell
 boolToBit :: [Bool] -> [Char]
@@ -71,459 +66,194 @@ boolToBit (x:xs) = (if x then '1' else '0') : boolToBit xs
 
 boolToBit [True,False,True]
 -- "101"
-```
+```  
 
-Okay. So, I'm sure you see where I'm going with this. There's a repeating pattern, so we'll **extract it into its own function**.  
+Vous voyez où je veux en venir ? Un même **schéma** se répète, donc nous allons l'extraire dans une fonction générique.  
 
-Let's start with the type. As input, we have:  
-- A **list of characters**  
-- A **list of numbers**  
-- A **list of booleans**  
-
-So, the most **general** type would be `[a]` (**a list of `a`**) for the input list.  
-
-For the **output type**, at first glance, we could use the same `[a]`, but as we see in the `boolToBit` function, sometimes the output type is different. So, let's **use a different type variable**, like `[b]`:  
-
-```haskell
-map :: [a] -> [b]
-```
-
-Now, let's extract the pattern:  
-
-```haskell
-map []     = []
-map (x:xs) = f x : map xs
-```
-
-This looks mostly okay, but we have to **get the function `f` from somewhere**, so we add it as a parameter.  
-
-Since the function `f` takes a value of type `a` and produces a value of type `b`, its type is `a -> b`. So, the final expression of our abstraction looks like this:  
+Nous avons toujours une **liste** en entrée, mais les types des éléments peuvent varier. Nous devons également transformer un type `a` en un type `b`. Voici donc notre abstraction :  
 
 ```haskell
 map :: (a -> b) -> [a] -> [b]
 map _ []     = []
 map f (x:xs) = f x : map f xs
-```
+```  
 
-Now, we can use `map` like this:  
+Essayons-la avec nos exemples précédents :  
 
 ```haskell
-map toLower "Hi, How's it Going?"
--- "hi, how's it going?"
+map toLower "Salut, Comment Ça Va ?"  
+map (+1) [1,1,2,3]  
+map (\x -> if x then '1' else '0') [True,False,True]  
+```  
 
-map (+1) [1,1,2,3]
--- [2,2,3,4]
+Sortie :  
 
-map (\x -> if x then '1' else '0') [True,False,True]
--- "101"
+```
+"salut, comment ça va ?"
+[2,2,3,4]
+"101"
 ```
 
-Awesome! **We abstracted away** the concept of applying a function to each element of a list, and we called this abstraction **map**. Then, we used it to avoid repeating ourselves and simplify our code.  
-
-This is cool, but we can **do even better**. Let's **go one level higher** with the **Functor** type class.
+Nous avons extrait le concept d'application d'une fonction arbitraire à chaque élément d'une liste, ce qui évite de **dupliquer du code**. Mais nous pouvons encore **généraliser** davantage ce concept avec la **classe de types `Functor`** ! 🚀  
 
 ---
 
-## **Abstracting the Functor Type Class**  
+## **Abstraction de la classe de types `Functor`**  
+Nous avons de nombreux **types** en Haskell. Prenons par exemple les valeurs optionnelles avec le type `Maybe`.  
 
-In Haskell, we have **many types**. Let's say we're working with **optional values** using the `Maybe` type. Just like with lists, we also need a way to **modify values inside `Maybe` types**.  
-
-No big deal, we know the drill. We can define the `maybeMap` function:  
+Comme pour les listes, nous voulons pouvoir appliquer une fonction à une valeur contenue dans un `Maybe` **sans modifier la structure**.  
 
 ```haskell
 maybeMap :: (a -> b) -> Maybe a -> Maybe b
 maybeMap _ Nothing  = Nothing
 maybeMap f (Just x) = Just (f x)
-```
+```  
 
-Now, let's use `maybeMap`:  
+Utilisation :  
 
 ```haskell
-maybeMap toLower (Just 'A')   -- Just 'a'
-maybeMap (+1) (Just 3)        -- Just 4
+maybeMap toLower (Just 'A')  -- Just 'a'
+maybeMap (+1) (Just 3)       -- Just 4
 maybeMap (\x -> if x then '1' else '0') (Just True)  -- Just '1'
 
-maybeMap toLower Nothing  -- Nothing
-maybeMap (+1) Nothing     -- Nothing
-maybeMap (\x -> if x then '1' else '0') Nothing  -- Nothing
-```
+maybeMap toLower Nothing     -- Nothing
+maybeMap (+1) Nothing        -- Nothing
+```  
 
-As you can see, `maybeMap` **can't modify** a `Nothing` value—it just **propagates the error**. But when we **have a value**, we apply the function and **wrap it again** in `Just`.  
+Nous retrouvons le même **schéma** que pour `map` ! 🔄  
 
-Notice how the function we apply as the first parameter in both `map` and `maybeMap` **doesn't care about the structure**—it **only modifies the values**.  
+Que ce soit pour les listes, `Maybe`, ou encore les **arbres** (`Tree`), nous appliquons une fonction à **chaque élément**, sans modifier la **structure** globale.  
+
+Nous pouvons **abstraire** encore plus cette notion avec une **classe de types** appelée **`Functor`**.  
 
 ---
 
-## **Defining the Functor Type Class**  
+## **Définition de la classe `Functor`**  
+Un **foncteur** est un type qui permet d'appliquer une fonction aux valeurs qu'il contient, **sans modifier la structure**.  
 
-Now that we've seen how `map` and `maybeMap` work, we can **generalize this pattern** into a type class called **Functor**:  
+Voici la définition de la classe `Functor` :  
 
 ```haskell
 class Functor f where
   fmap :: (a -> b) -> f a -> f b
+```  
+
+Nous avons cependant **une contrainte importante** : `fmap` ne doit **pas modifier la structure**.  
+
+Par exemple, si nous définissons `fmap` pour les listes **de manière incorrecte** :  
+
+```haskell
+wrongFmap :: (a -> b) -> [a] -> [b]
+wrongFmap _ []     = []
+wrongFmap f (x:xs) = f x : f x : wrongFmap f xs
+```  
+
+Nous obtenons un **mauvais comportement** :  
+
+```haskell
+wrongFmap (+1) [1,2,3]
+-- [2,2,3,3,4,4] ❌
 ```
 
-### **Functor Laws**  
-When defining instances of `Functor`, we must follow two fundamental laws:  
-
-#### **Identity Law**  
-Applying `fmap id` should be the same as applying `id` directly to the structure:  
+Cela **viole** la loi d'identité des foncteurs :  
 
 ```haskell
 fmap id == id
-```
+```  
 
-#### **Composition Law**  
-Applying `fmap` to a function composition should be the same as **composing `fmap` calls**:  
+Une autre loi importante est la **loi de composition** :  
 
 ```haskell
 fmap (f . g) == fmap f . fmap g
-```
+```  
+
+Si vous respectez **la loi d'identité**, alors la loi de **composition** est automatiquement satisfaite grâce au **système de types de Haskell** ! 🎉  
 
 ---
 
-## **Defining Functor Instances**  
+## **Définition d'instances de `Functor`**  
 
-Now, let's define some `Functor` instances:  
+Voyons comment définir `Functor` pour les listes, `Maybe` et un type `Tree` :  
 
-### **Lists**  
 ```haskell
 instance Functor [] where
   fmap _ []     = []
   fmap f (x:xs) = f x : fmap f xs
-```
 
-### **Maybe**  
-```haskell
 instance Functor Maybe where
   fmap _ Nothing  = Nothing
   fmap f (Just x) = Just (f x)
-```
-
-### **Binary Trees**  
-```haskell
-data Tree a = Leaf a | Node (Tree a) a (Tree a) deriving (Show, Eq)
 
 instance Functor Tree where
   fmap f (Leaf x)       = Leaf (f x)
   fmap f (Node lt x rt) = Node (fmap f lt) (f x) (fmap f rt)
 ```
 
+Vérifions que cela fonctionne :  
+
+```haskell
+fmap boolToBit [False,True,False]
+-- "010"
+
+fmap boolToBit (Just True)
+-- Just '1'
+
+fmap id [1,2,3] == id [1,2,3]
+-- True ✅
+```
+
+Nos instances de `Functor` respectent bien les **lois des foncteurs** ! 🎉  
+
+Et voilà ! Vous savez maintenant ce qu'est un **foncteur** en Haskell et comment l'utiliser en pratique. 🚀
+
 ---
 
-And that’s it! Now you **understand Functors** and how to **use them in practice**.  
-
-🎉 **Congratulations!** 🎉
-
-Here's the English translation of the given Haskell explanation:  
-
----
-
-This might blow your mind, but I have to say it... **functions are functors!** Hear me out.  
-
-### Understanding Type Constructors  
-
-In Haskell, we can inspect the kinds of different types:  
-
-```haskell
-:k (Char, Bool)
--- (Char, Bool) :: *
-
-:k (,)
--- (,) :: * -> * -> *
-```
-
-Now, let's define a function:  
-
-```haskell
-biggerThan3 :: Int -> Bool
-biggerThan3 = (>3)
-```
-
-Checking its type:  
-
-```haskell
-:t biggerThan3
--- biggerThan3 :: Int -> Bool
-
-:k (Int -> Bool)
--- (Int -> Bool) :: *
-```
-
-Similarly, for the function arrow `->`:  
-
-```haskell
-:k (->)
--- (->) :: * -> * -> *
-```
-
-So, just like the **pair type constructor `(,)`**, which takes two types and creates a tuple type, the **function type constructor `(->)`** takes two types and creates a function type.  
-
-For example:  
-
-- `(,) Char Bool` gives us the type `(Char, Bool)`, a tuple of a character and a boolean.  
-- `(->) Int Bool` gives us `Int -> Bool`, a function that takes an `Int` and returns a `Bool`.  
-
-### Making `(->) r` a Functor  
-
-Just like we partially apply `(,)` to create a functor instance:  
-
-```haskell
-:k (,)
--- ❌ Not a functor by itself
-
-:k (,) Int
--- ✅ Now it has the right kind to be a functor: * -> *
-```
-
-We can do the same for `(->)`:  
-
-```haskell
-:k (->)
--- ❌ Not a functor by itself
-
-:k (->) Int
--- ✅ Now it has the right kind to be a functor: * -> *
-```
-
-So, let's define the `Functor` instance for functions:  
-
-```haskell
-instance Functor ((->) r) where
-  ...
-```
-
-Here, `r` is the first type applied to `(->)`, meaning it’s the input type of the function.  
-
-### Understanding `fmap` for Functions  
-
-The type of `fmap` is:  
-
-```haskell
-fmap :: (a -> b) -> f a -> f b
-```
-
-For our special case of `(->) r`:  
-
-```haskell
-fmap :: (a -> b) -> (->) r a -> (->) r b
-```
-
-Haskell's syntactic sugar means we usually write `(->) r a` as `r -> a`:  
-
-```haskell
-fmap :: (a -> b) -> (r -> a) -> (r -> b)
-```
-
-That means `fmap` takes a function `(a -> b)` and another function `(r -> a)` and produces a function `(r -> b)`.  
-
-### Implementing `fmap` for Functions  
-
-Both arguments are functions, so let’s call them `f` and `g`:  
-
-```haskell
-instance Functor ((->) r) where
-  -- fmap :: (a -> b) -> (r -> a) -> (r -> b)
-  fmap f g = ...
-```
-
-Since we need a function that takes `r` and returns `b`, and we have:  
-
-- `g :: r -> a`
-- `f :: a -> b`
-
-We just **compose** them:  
-
-```haskell
-instance Functor ((->) r) where
-  fmap f g = f . g
-```
-
-Since `fmap f g` is just `f . g`, we can write it even more succinctly:  
-
-```haskell
-instance Functor ((->) r) where
-  fmap = (.)
-```
-
-That’s it! Function composition is `fmap` for functions.  
-
-### Testing It  
-
-Let’s test it with some values:  
-
-```haskell
-value1 :: Int -> Int
-value1 = (*2)
-
-:t value1
--- value1 :: Int -> Int
-
-value1 3
--- 6
-
-:t fmap (>4) value1
--- fmap (>4) value1 :: Int -> Bool
-
-(fmap (>4) value1) 3
--- True
-```
-
-Another example:  
-
-```haskell
-value2 :: Bool -> Char
-value2 x = if x then '1' else '0'
-
-:t value2
--- value2 :: Bool -> Char
-
-value2 True
--- '1'
-
-:t fmap succ value2
--- fmap succ value2 :: Bool -> Char
-
-(fmap succ value2) True
--- '2'
-```
-
-Even the **Functor laws** hold:  
-
-```haskell
-(fmap id value1) 5 == (id value1) 5
--- True
-
-(fmap id value2) False == (id value2) False
--- True
-```
-
-It works! 🎉  
-
-### `<$>` and Function Lifting  
-
-Since `fmap` is binary, we can use it infix-style:  
-
-```haskell
-fmap (+1) (Just 3)
--- Just 4
-
-(+1) `fmap` (Just 3)
--- Just 4
-```
-
-Haskell provides `<$>` as an infix synonym for `fmap`:  
-
-```haskell
-(<$>) :: Functor f => (a -> b) -> f a -> f b
-(<$>) = fmap
-```
-
-So, we can rewrite:  
-
-```haskell
-(+1) <$> Just 3
--- Just 4
-```
-
-### `<$>` vs `$`  
-
-The operator `<$>` is similar to `$`, but it works on functors:  
+Juste 4  
+"1010"  
+"1010"  
+[2,4,6]  
+[2,4,6]  
+Et voilà comment l'utiliser.  
+
+Maintenant, il y a une raison pour laquelle cet opérateur a un signe dollar au milieu. C'est une allusion à l'application de fonction. Si nous regardons les types :  
 
 ```haskell
 ($)  ::              (a -> b) ->   a ->   b
 (<$>) :: Functor f => (a -> b) -> f a -> f b
 ```
 
-Visually:  
+Nous voyons que cela semble familier, non seulement en termes de type mais aussi conceptuellement. Nous savons depuis la leçon 5 que les fonctions sont associatives à droite, donc nous pouvons entourer les deux types à droite, et ce serait la même chose que de ne pas les avoir :  
 
 ```haskell
 ($)  ::              (a -> b) -> (  a ->   b)
 (<$>) :: Functor f => (a -> b) -> (f a -> f b)
 ```
 
-This means `<$>` **lifts** a function to work on functor values.  
+En regardant cela, nous voyons que l'opérateur d'application de fonction prend une fonction `(a -> b)` et retourne la même fonction `(a -> b)` sans aucun changement. Ce que nous savions déjà. Nous utilisons cet opérateur uniquement parce qu'il est associatif à droite, ce qui nous permet de supprimer les parenthèses.  
 
-For example:  
+Mais si nous regardons l'opérateur `fmap` (`<$>`), nous voyons qu'il prend une fonction `(a -> b)` et retourne la même fonction, mais qui fonctionne maintenant pour la version fonctorielle de `a` et `b`. C'est ce que nous appelons "élever" une fonction. Nous disons que l'opérateur `fmap` (`<$>`) élève la fonction `(a -> b)` pour qu'elle puisse fonctionner au niveau `f`.  
 
-```haskell
-:t toLower
--- toLower :: Char -> Char
-
-:t (toLower <$>)
--- (<$>) toLower :: Functor f => f Char -> f Char
-```
-
-### Working with Nested Functors 🪆  
-
-Functors can be nested, like:  
+Au cas où ce ne serait pas encore clair, voyons deux exemples :  
 
 ```haskell
-value1 :: Either String Bool
-value1 = Right False
+:t toLower             -- Type de la fonction d'origine
+toLower 'A'
 
-value2 :: [Either String Bool]
-value2 = [Left "error", Right True, Right False]
+:t (toLower <$>)       -- Type de la fonction élevée
+toLower <$> Just 'A'
 ```
-
-To apply `fmap` at multiple levels, use function composition:  
 
 ```haskell
-(fmap . fmap) boolToBit value2
--- [Left "error", Right '1', Right '0']
+boolToBit :: Bool -> Char
+boolToBit x = if x then '1' else '0'
+
+:t boolToBit            -- Type de la fonction d'origine
+boolToBit False
+
+:t (boolToBit <$>)      -- Type de la fonction élevée
+boolToBit <$>  [False]
 ```
 
-For deeper levels:  
+---
 
-```haskell
-(fmap . fmap . fmap) boolToBit value3
-(fmap . fmap . fmap . fmap) boolToBit value4
-```
-
-### Extra Functor Functions  
-
-- **Flipped fmap**:  
-
-```haskell
-(<&>) :: Functor f => f a -> (a -> b) -> f b 
-as <&> f = f <$> as
-```
-
-Example:  
-
-```haskell
-[1,2,3] <&> (+1)
--- [2,3,4]
-```
-
-- **Replace values in functors**:  
-
-```haskell
-(<$) :: a -> f b -> f a
-(<$) = fmap . const
-```
-
-Example:  
-
-```haskell
-'a' <$ Just 2
--- Just 'a'
-```
-
-- **Discard values with `void`**:  
-
-```haskell
-void :: Functor f => f a -> f ()
-void x = () <$ x
-```
-
-Example:  
-
-```haskell
-void [1,2,3]
--- [(),(),()]
-```
-
-### Conclusion  
-
-Functions are functors, and `fmap` for functions is just **function composition**. Once you grasp this, it opens the door to deeper functional programming concepts like Applicatives and Monads. 🚀
+Cela te semble bien jusqu'à présent ? Veux-tu que je continue la traduction de tout le texte ? 😊
