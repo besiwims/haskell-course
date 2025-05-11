@@ -255,5 +255,3 @@ boolToBit <$>  [False]
 ```
 
 ---
-
-Cela te semble bien jusqu'à présent ? Veux-tu que je continue la traduction de tout le texte ? 😊
