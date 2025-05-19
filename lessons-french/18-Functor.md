@@ -1,9 +1,3 @@
-Functor
-
-Voici la traduction en français :  
-
----
-
 # **Foncteur**  
 Bienvenue dans une nouvelle leçon du cours Haskell. Celle-ci est entièrement consacrée à la classe de types **Functor**.  
 
@@ -255,5 +249,3 @@ boolToBit <$>  [False]
 ```
 
 ---
-
-Cela te semble bien jusqu'à présent ? Veux-tu que je continue la traduction de tout le texte ? 😊
